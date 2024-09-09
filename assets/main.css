@@ -19,12 +19,51 @@
   font-display: swap;
   src: url(https://fonts.gstatic.com/s/roboto/v32/KFOlCnqEu92Fr1MmWUlvAw.ttf) format('truetype');
 }
+* {
+  box-sizing: border-box;
+  transition: 0.35s;
+}
 html,
 body,
 #__nuxt,
 .app-container {
-  min-height: 100%;
+  min-height: 100vh;
   font-family: 'Roboto', sans-serif;
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 400;
+  color: #404040;
+}
+/* Кастомизация для WebKit браузеров (Chrome, Safari) */
+::-webkit-scrollbar {
+  width: 4px;
+  /* Тонкая вертикальная полоса */
+  height: 4px;
+  /* Тонкая горизонтальная полоса */
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  /* Едва заметный цвет */
+  border-radius: 10px;
+  /* Закругление углов */
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+  /* Более заметный при наведении */
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+  /* Прозрачный трек */
+  border-radius: 10px;
+  /* Скругление для трека */
+}
+/* Кастомизация для Firefox */
+* {
+  scrollbar-width: thin;
+  /* Тонкая полоса прокрутки */
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+  /* Цвет полосы и трека */
+}
+/* Плавный инерционный скроллинг для устройств Apple */
+body {
+  -webkit-overflow-scrolling: touch;
 }

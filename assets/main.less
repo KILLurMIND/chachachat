@@ -1,17 +1,48 @@
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Roboto:wght@400;700&display=swap');
 
-@cl-purp: #5D00F4;
-@cl-black: #404040;
-@cl-white: #FFFFFF;
+@import 'config.less';
 
-@xl-size: 81px;
-@lg-size: @xl-size * (2/3);
-@md-size: @lg-size * (2/3);
-@sm-size: @md-size * (2/3);
+* {
+    box-sizing: border-box;
+    transition: 0.35s;
+}
 
 html, body, #__nuxt, .app-container {
-    min-height: 100%;
+    min-height: 100vh;
     font-family: 'Roboto', sans-serif;
-    font-size: @sm-size;
+    font-size: @sm-size * (2/3);
     font-weight: 400;
+    color: @cl-black;
 }
+
+/* Кастомизация для WebKit браузеров (Chrome, Safari) */
+::-webkit-scrollbar {
+    width: 4px; /* Тонкая вертикальная полоса */
+    height: 4px; /* Тонкая горизонтальная полоса */
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1); /* Едва заметный цвет */
+    border-radius: 10px; /* Закругление углов */
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3); /* Более заметный при наведении */
+  }
+  
+  ::-webkit-scrollbar-track {
+    background-color: transparent; /* Прозрачный трек */
+    border-radius: 10px; /* Скругление для трека */
+  }
+  
+  /* Кастомизация для Firefox */
+  * {
+    scrollbar-width: thin; /* Тонкая полоса прокрутки */
+    scrollbar-color: rgba(0, 0, 0, 0.1) transparent; /* Цвет полосы и трека */
+  }
+  
+  /* Плавный инерционный скроллинг для устройств Apple */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  

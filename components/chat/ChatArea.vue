@@ -1,10 +1,15 @@
 <template>
-    <ul class="messages">
-      <li v-for="(message, index) in messages" :key="index">
+  <div class="char-area">
+    <div class="chat-area__streak">
+      <div v-for="(message, index) in messages" :key="index" class="chat-streak__row">
         <span>{{ message.timestamp }}</span> {{ message.text }}
-      </li>
-    </ul>
-    <input v-model="inputMessage" @keyup.enter="sendMessage" placeholder="Enter a message" />
+      </div>
+    </div>
+    <div class="chat-area__form">
+      <input class="chat-area__form-input" v-model="inputMessage" @keyup.enter="sendMessage" placeholder="Enter a message" />
+      <button class="chat-area__form-btn-send"></button>
+    </div>
+  </div>
 </template>
 
 <script setup>
