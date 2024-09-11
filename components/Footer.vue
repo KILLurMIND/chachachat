@@ -53,13 +53,13 @@
                 transition: 0.35s ease-out; /* Анимация плавного возвращения */
 
                 .hh-label__logo {
-                    aspect-ratio: 1;
-                    height: 36px;
+                    aspect-ratio: 1 / 1;
+                    width: 36px;
                 }
 
                 &::after {
                     top: 0;
-                    position: fixed;
+                    position: absolute;
                     width: 100%;
                     text-align: center;
                     content: 'my name is';
@@ -70,7 +70,7 @@
                 }
 
                 &:hover {
-                    background: #d6001c;
+                    background: radial-gradient(circle at top left, #D6001C 60%, #a50016 100%);;
                     box-shadow: 0px 0px 84px 24px rgba(214, 0, 28, 0.2);
                     transform: scale(1.5);
 

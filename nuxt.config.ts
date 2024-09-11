@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         less: {
-          additionalData: `@import "@/assets/config.less";`
+          additionalData: `@import "@/assets/config.less";`,
         }
       }
     }
