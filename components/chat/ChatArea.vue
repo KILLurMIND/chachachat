@@ -13,7 +13,12 @@
 </template>
 
 <script setup>
-  
+  import { ref, onMounted, onBeforeUnmount } from 'vue';
+  import { useNuxtApp } from '#app';
+
+  const { $socket } = useNuxtApp();
+
+
 </script>
 
 <style scoped lang="less">

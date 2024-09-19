@@ -1,64 +1,122 @@
 <template>
-    <div class="user-panel">
-      <div v-for="user in users" :key="user.id" class="user-panel__item" :class="{ 'user-panel__item--user': user.id === userId }">
-        <div class="user-img" :style="{ backgroundImage: `url(${user.avatar})` }"></div>
-        <div class="user-name">{{ user.nickname }}</div>
+    <transition-group name="fade-scale" tag="div" class="user-panel">
+      <div 
+        v-for="user in users" 
+        :key="user.id" class="user-panel__item" 
+        :class="{ 'user-panel__item--user' : user.id === $socket.id }" 
+        :data-socket-id="user.id"
+        :style="{ borderColor: user.color }">
+        <div class="user-img" :style="{ backgroundImage: `url(${getAvatarUrl(user.avatar)})` }"></div>
+        <div class="user-name" :style="{ color: user.color }">{{ user.nickname }}</div>
       </div>
-    </div>
+    </transition-group>
 </template>
 
 <script setup>
-
     import { ref, onMounted, onBeforeUnmount } from 'vue';
-    import io from 'socket.io-client';
+    import { useNuxtApp } from '#app';
 
-    const socket = io('http://localhost:3001', {
-        transports: ['websocket'], // Укажите только WebSocket
-    });
+    const { $socket } = useNuxtApp();
 
     const users = ref([]);
-    const userId = ref(null);
 
+    const colorSet = ['#28E5FF', '#46FF28', '#FF2828', '#FFD028'];
+
+    // Функция для получения URL аватара
+    const getAvatarUrl = (avatar) => `_nuxt/assets/imgs/avatars/${avatar}`;
+
+    const assignUserColors = (currentUsers) => {
+        currentUsers.forEach((user, index) => {
+            if (!user.color) {
+                // Назначаем цвет пользователю, используя индекс
+                user.color = colorSet[index % colorSet.length];
+            }
+        });
+    };
+
+    const onCurrentUsers = (newUserList) => {
+        // Сравнение старого и нового списка пользователей
+        const oldUserIds = users.value.map((user) => user.id);
+        const newUserIds = newUserList.map((user) => user.id);
+
+        // Вычисляем, кто вошел (есть в новом, но нет в старом списке)
+        const usersJoined = newUserList.filter((user) => !oldUserIds.includes(user.id));
+      
+        // Вычисляем, кто вышел (был в старом, но отсутствует в новом списке)
+        const usersLeft = users.value.filter((user) => !newUserIds.includes(user.id));
+
+        // Логируем пользователей, которые вошли
+        usersJoined.forEach((user) => {
+          console.log(`${$socket.id === user.id ? '(Это Вы)' : ''}Пользователь вошел: ${user.nickname} (ID: ${user.id})`);
+        });
+    
+        // Логируем пользователей, которые вышли
+        usersLeft.forEach((user) => {
+          console.log(`Пользователь вышел: ${user.nickname} (ID: ${user.id})`);
+        });
+    
+        //Раздаем цвет локально
+        assignUserColors(newUserList);
+        // Обновляем текущий список пользователей
+        users.value = newUserList;
+    };
+
+    // Обработчик успешного переподключения
+    const onReconnect = () => {
+      console.log('Соединение восстановлено. Ваш socket ID:', $socket.id);
+      $socket.emit('readyForUsers'); // Запрашиваем обновленный список пользователей
+    };
+
+    const onDisconnect = () => {
+      users.value = [];
+      console.log('Соединение потеряно, ждем переподключения...');
+    };
+
+    // Настройка событий сокета
+    const setupSocketEvents = () => {
+        $socket.on('currentUsers', onCurrentUsers);
+        $socket.on('disconnect', onDisconnect);
+        $socket.on('reconnect', onReconnect);
+    };
+
+    // Отключение событий сокета
+    const offSocketEvents = () => {
+      $socket.off('currentUsers', onCurrentUsers);
+      $socket.off('disconnect', onDisconnect);
+    };
+
+    // Обработка и настройка сокета при монтировании
     onMounted(() => {
-        
-        // Логирование ID сокета при успешном подключении
-        socket.on('connect', () => {
-          console.log('Socket connected:', socket.id);
-          userId.value = socket.id;
-        });
+        const handleConnection = () => {
+          console.log(`Подключение установлено. Socket ID: ${$socket.id}`);
+          setupSocketEvents();
+          $socket.emit('readyForUsers');
+        };
 
-        socket.on('user properties', (data) => {
-            console.log(data);
-        });
+        if ($socket.connected) {
+          handleConnection();
+        } else {
+          $socket.once('connect', handleConnection);
+        }
 
-        socket.on('user connected', (user) => {
-          console.log('User connected:', user);
-          user.avatar = `/imgs/avatars/${user.avatar}`;
-          users.value.push(user);
-        });
+        // Обработка переподключений
+        $socket.on('reconnect', onReconnect);
 
-        socket.on('user disconnected', (user) => {
-          console.log('User disconnected:', user);
-          users.value = users.value.filter((u) => u.id !== user.id);
-        });
-
-        socket.on('disconnect', () => {
-          console.log(`Socket disconnected: ${socket.id}`);
-        });
-
+        // Обработка ошибок подключения
+        $socket.on('connect_error', (error) => console.error('Ошибка подключения:', error));
+        $socket.on('reconnect_error', (error) => console.error('Ошибка переподключения:', error));
     });
-       
+
+    // Очистка обработчиков перед размонтированием
     onBeforeUnmount(() => {
-      // Отключаем сокет при размонтировании компонента
-      socket.disconnect();
+      offSocketEvents();
     });
-
 </script>
 
 <style scoped lang="less">
 
     .user-panel {
-        top: @sm-size * (2 / 3);
+        top: @sm-size;
         position: sticky;
         display: flex;
         align-items: center;
@@ -82,6 +140,9 @@
             padding: @sm-size * (2 / 3);
             border: 2px solid @cl-black;
             border-radius: @sm-size * (2/3);
+            opacity: 0; /* Исходное состояние – невидимый */
+            transform: scale(0.9); /* Исходное состояние – уменьшенный */
+            animation: fadeInScale 0.6s ease-out forwards; /* Анимация появления */
 
             .user-name {
                 z-index: 1;
@@ -111,11 +172,11 @@
             
             &--user {
                 background: linear-gradient(135deg, #5D00F4, #351863);
-                order: 0;
+                order: -1;
                 border: none;
 
                 .user-name {
-                    color: @cl-white;
+                    color: @cl-white!important;
                     font-weight: 400;
                 }
 
@@ -123,6 +184,40 @@
                     
                 }
             }
+        }
+    }
+
+    /* Анимация появления */
+    .fade-scale-enter-active {
+        animation: fadeInScale 0.6s ease-out forwards;
+    }
+
+    /* Анимация исчезновения */
+    .fade-scale-leave-active {
+        animation: fadeOutScale 0.6s ease-in forwards;
+    }
+
+    /* Ключевые кадры для появления */
+    @keyframes fadeInScale {
+        0% {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Ключевые кадры для исчезновения */
+    @keyframes fadeOutScale {
+        0% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: scale(0.9);
         }
     }
 

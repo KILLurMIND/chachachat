@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "server": "node ./server/socket-server.js"
+    "server": "node ./server/socket.js"
   },
   "dependencies": {
     "date-fns": "^3.6.0",
