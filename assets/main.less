@@ -8,11 +8,15 @@
 }
 
 html, body, #__nuxt, .app-container {
-    min-height: 100vh;
+    height: 100vh;
     font-family: 'Roboto', sans-serif;
     font-size: @sm-size * (2/3);
     font-weight: 400;
     color: @cl-black;
+
+    .responsive(@tablet, {
+      
+    });
 }
 
 /* Кастомизация для WebKit браузеров (Chrome, Safari) */

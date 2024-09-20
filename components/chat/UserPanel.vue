@@ -1,21 +1,20 @@
 <template>
     <transition-group name="fade-scale" tag="div" class="user-panel">
-      <div 
-        v-for="user in users" 
-        :key="user.id" class="user-panel__item" 
-        :class="{ 'user-panel__item--user' : user.id === $socket.id }" 
-        :data-socket-id="user.id"
-        :style="{ borderColor: user.color }">
-        <div class="user-img" :style="{ backgroundImage: `url(${getAvatarUrl(user.avatar)})` }"></div>
-        <div class="user-name" :style="{ color: user.color }">{{ user.nickname }}</div>
-      </div>
+        <div class="user-list">
+            <div 
+                v-for="user in users" 
+                :key="user.id" class="user-list__item" 
+                :class="{ 'user-list__item--user' : user.id === $socket.id }" 
+                :data-socket-id="user.id"
+                :style="{ borderColor: user.color }">
+                <div class="user-img" :style="{ backgroundImage: `url(${getAvatarUrl(user.avatar)})` }"></div>
+                <div class="user-name" :style="{ color: user.color }">{{ user.nickname }}</div>
+            </div>
+        </div>
     </transition-group>
 </template>
 
 <script setup>
-    import { ref, onMounted, onBeforeUnmount } from 'vue';
-    import { useNuxtApp } from '#app';
-
     const { $socket } = useNuxtApp();
 
     const users = ref([]);
@@ -120,14 +119,19 @@
         position: sticky;
         display: flex;
         align-items: center;
-        gap: @sm-size * (2/3);
-        overflow-y: auto;
+        gap: @xs-size;
+        overflow: hidden;
         border-bottom: 2px solid @cl-muted;
-        padding: 0 @sm-size;
-        padding-bottom: @sm-size;
         background: @cl-white;
 
-        &__item {
+        .user-list {
+            display: flex;
+            gap: @xs-size;
+            padding: 0 @sm-size;
+            padding-bottom: @sm-size;
+            overflow-x: auto;
+
+            &__item {
             position: relative;
             display: flex;
             flex-direction: column-reverse;
@@ -144,47 +148,111 @@
             transform: scale(0.9); /* Исходное состояние – уменьшенный */
             animation: fadeInScale 0.6s ease-out forwards; /* Анимация появления */
 
-            .user-name {
-                z-index: 1;
-                width: 100%;
-                white-space: break-spaces;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                line-height: 1;
-            }
-
-            .user-img {
-                position: absolute;
-                inset: 0;
-                background-size: cover;
-                background-position: @sm-size center; /* Показать левую половину */
-                background-repeat: no-repeat;                
-            }
-
-            &:hover {
-                aspect-ratio: 16 / 16;
-                flex: 0 0 ((@xl-size / 9) * 16);
-
-                .user-img {
-                    background-position: @md-size center; /* Показать левую половину */
-                }
-            }
-            
-            &--user {
-                background: linear-gradient(135deg, #5D00F4, #351863);
-                order: -1;
-                border: none;
-
                 .user-name {
-                    color: @cl-white!important;
-                    font-weight: 400;
+                    z-index: 1;
+                    width: 100%;
+                    white-space: break-spaces;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    line-height: 1;
                 }
 
                 .user-img {
-                    
+                    position: absolute;
+                    inset: 0;
+                    background-size: cover;
+                    background-position: @sm-size center; /* Показать левую половину */
+                    background-repeat: no-repeat;                
+                }
+
+                &:hover {
+                    aspect-ratio: 16 / 16;
+                    flex: 0 0 ((@xl-size / 9) * 16);
+
+                    .user-img {
+                        background-position: @md-size center; /* Показать левую половину */
+                    }
+                }
+
+                &--user {
+                    background: @cl-gradient;
+                    order: -1;
+                    border: none;
+
+                    .user-name {
+                        color: @cl-white!important;
+                        font-weight: 400;
+                    }
+
+                    .user-img {
+
+                    }
                 }
             }
         }
+
+        .responsive(@tablet, {//.user-panel
+            top: 0;
+            flex-direction: column;
+            justify-content: start;
+            align-items: stretch;
+            border: none;
+            gap: 0;
+            overflow: hidden auto;
+
+            .user-list {
+                position: relative;
+                flex-direction: column;
+                overflow: visible;
+                padding: 0 @sm-size;
+                border-left: 2px solid @cl-muted;
+                flex: 1;
+
+                &::after {
+                    content: '';
+                    position: sticky;
+                    width: 100%;
+                    height: @sm-size;
+                    pointer-events: none;
+                    z-index: 1;
+                    bottom: -1px;
+                    background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+                }
+
+                &:hover {
+                    border-left: 4px solid @cl-purp;
+                }
+
+                &__item:hover ~ .user-list {
+                    border-left: 4px solid @cl-purp;
+                }
+            }
+
+            &::before {
+                content: '';
+                position: sticky;
+                width: 100%;
+                min-height: @sm-size;
+                pointer-events: none;
+                z-index: 1;
+                top: -1px;
+                background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+            }
+            &::after {
+                content: '';
+                position: sticky;
+                width: 100%;
+                height: @sm-size;
+                pointer-events: none;
+                z-index: 1;
+                bottom: -1px;
+                background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+            }
+
+            &__item {
+
+            }
+        });
     }
 
     /* Анимация появления */

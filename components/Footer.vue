@@ -19,6 +19,7 @@
     footer {
         display: flex;
         padding: @sm-size;
+        padding-top: 0;
 
         a {
             text-decoration: none;
