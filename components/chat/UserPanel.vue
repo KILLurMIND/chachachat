@@ -126,6 +126,7 @@
 
         .user-list {
             display: flex;
+            align-items: start;
             gap: @xs-size;
             padding: 0 @sm-size;
             padding-bottom: @sm-size;
@@ -137,8 +138,8 @@
             flex-direction: column-reverse;
             align-items: start;
             justify-content: space-between;
-            flex: 0 0 @xl-size;
             aspect-ratio: 9 / 16;
+            flex: 0 0 @xl-size;
             overflow: hidden;
             box-sizing: border-box;
             padding: @sm-size * (2 / 3);
@@ -166,7 +167,7 @@
                 }
 
                 &:hover {
-                    aspect-ratio: 16 / 16;
+                    aspect-ratio: 1 / 1;
                     flex: 0 0 ((@xl-size / 9) * 16);
 
                     .user-img {
@@ -183,10 +184,6 @@
                         color: @cl-white!important;
                         font-weight: 400;
                     }
-
-                    .user-img {
-
-                    }
                 }
             }
         }
@@ -199,33 +196,30 @@
             border: none;
             gap: 0;
             overflow: hidden auto;
+            border-left: 2px solid @cl-muted;
 
             .user-list {
                 position: relative;
                 flex-direction: column;
+                align-items: end;
                 overflow: visible;
                 padding: 0 @sm-size;
-                border-left: 2px solid @cl-muted;
                 flex: 1;
 
-                &::after {
-                    content: '';
-                    position: sticky;
-                    width: 100%;
-                    height: @sm-size;
-                    pointer-events: none;
-                    z-index: 1;
-                    bottom: -1px;
-                    background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
-                }
+                &__item {
+                    flex: none;
+                    width: @xl-size;
+                    aspect-ratio: 1 / 1;
 
-                &:hover {
-                    border-left: 4px solid @cl-purp;
+                    &:hover {
+                        flex: none;
+                        width: (@xl-size / (2/3));
+                    }
                 }
+            }
 
-                &__item:hover ~ .user-list {
-                    border-left: 4px solid @cl-purp;
-                }
+            &:hover {
+                border-left: 4px solid @cl-purp;
             }
 
             &::before {
@@ -242,15 +236,11 @@
                 content: '';
                 position: sticky;
                 width: 100%;
-                height: @sm-size;
+                min-height: @sm-size;
                 pointer-events: none;
                 z-index: 1;
                 bottom: -1px;
                 background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
-            }
-
-            &__item {
-
             }
         });
     }

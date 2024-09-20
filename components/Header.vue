@@ -11,6 +11,10 @@
         background: @cl-white;
         padding: 0 @sm-size;
         padding-top: @lg-size;
+
+        .responsive(@tablet, {
+            padding-top: @sm-size;
+        });
     }
 
 </style>
