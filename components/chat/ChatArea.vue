@@ -52,6 +52,9 @@
     padding: 0 @sm-size;
 
     .chat-area__streak {
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
       gap: @xs-size;
       overflow-y: auto;
       flex-grow: 1;
@@ -116,6 +119,11 @@
         }
       }
     }
+
+    .responsive(@tablet, {
+      padding: 0;
+      padding-left: @sm-size;
+    });
   }
 
 </style>

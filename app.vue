@@ -32,9 +32,29 @@
   .app-container {
     display: flex;
     flex-direction: column;
+    padding-bottom: @sm-size;
 
-    .responsive(@tablet, {
+    .responsive(@tablet, {//.app-container
+      display: grid;
+      grid-template-areas: 
+        "header header"
+        "main user-panel"; 
+      grid-template-columns: 1fr auto; // Main занимает всю оставшуюся ширину, а user-list — авторазмер
+      grid-template-rows: auto 1fr;
       gap: @sm-size;
+      flex-wrap: wrap;
+
+      header {
+        grid-area: header;
+      }
+
+      main {
+        grid-area: main;
+      }
+
+      .user-panel {
+        grid-area: user-panel;
+      }
     });
   }
 

@@ -156,6 +156,7 @@
             gap: 0;
             overflow: hidden auto;
             border-left: 2px solid @cl-muted;
+            order: 1;
 
             .user-list {
                 position: relative;

@@ -10,7 +10,6 @@
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        padding-bottom: @sm-size;
         overflow: auto;
 
         .responsive(@tablet, {
