@@ -2,21 +2,40 @@
   <div class="chat-area">
     <div class="chat-area__streak">
       <div v-for="(message, index) in messages" :key="index" class="chat-streak__row">
-        <span>{{ message.timestamp }}</span> {{ message.text }}
+        <div class="chat-streal__row-time">{{ message.timestamp }}</div>
+        <div class="chat-streak__row-message">{{ message.text }}</div>
       </div>
     </div>
     <div class="chat-area__form">
       <input class="chat-area__form-input" v-model="inputMessage" @keyup.enter="sendMessage" placeholder="Ваше сообщение" />
-      <button class="chat-area__form-btn-send"><i class="bi bi-arrow-up-circle"></i></button>
+      <button class="chat-area__form-btn"><i class="bi bi-arrow-up-circle"></i></button>
     </div>
   </div>
 </template>
 
 <script setup>
+  const { $socket } = useNuxtApp();
+
+  const messages = ref([]);
+  const inputMessage = ref('');
+
+  // Отправка сообщения на сервер
+  const sendMessage = () => {
+      if (inputMessage.value.trim() !== '') {
+          const message = {
+              message: inputMessage.value,
+              timestamp: new Date().toISOString(),
+          };
+          $socket.emit('chatMessage', message);
+          inputMessage.value = '';
+      }
+  };
   
   onMounted(() => {
 
-    
+  $socket.on('initMessages', (initialMessages) => {
+    messages.value = initialMessages;
+  });
 
   });
 
@@ -29,11 +48,24 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    max-height: 100%;
     padding: 0 @sm-size;
 
     .chat-area__streak {
-      display: flex;
+      gap: @xs-size;
+      overflow-y: auto;
       flex-grow: 1;
+
+      .chat-streak__row {
+
+        &-time {
+
+        }
+
+        &-message {
+
+        }
+      }
     }
     .chat-area__form {
       display: flex;
@@ -55,7 +87,7 @@
         }
       }
 
-      .chat-area__form-btn-send {
+      .chat-area__form-btn {
         padding: @sm-size * (2 / 3);
         width: @md-size;
         aspect-ratio: 1 / 1;

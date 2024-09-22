@@ -6,6 +6,9 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { db } from '../plugins/firebase.js'; // используем Firebase инициализацию
+import { collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+
 // Определение текущей директории
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,9 +36,17 @@ let connectedUsers = [];
 // Обслуживание статических файлов аватаров
 /* app.use('/avatars', express.static(path.join(__dirname, 'avatars'))); */
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log('User connected:', socket.id);
   console.log('Connected users:', connectedUsers.length);
+
+  const messagesRef = collection(db, 'messages');
+  const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(10));
+  
+  const snapshot = await getDocs(q);
+  const messages = snapshot.docs.map(doc => doc.data()).reverse(); // последние 10 сообщений
+
+  socket.emit('initMessages', messages);
 
   // Проверяем, не превышено ли количество пользователей
   if (connectedUsers.length >= userPool.length) {
@@ -61,6 +72,26 @@ io.on('connection', (socket) => {
   socket.on('readyForUsers', () => {
     console.log(`${socket.id} - полностью загрузился и готов получать инфу.`);
     socket.emit('currentUsers', connectedUsers);
+    socket.emit('initMessages', messages);
+  });
+
+  // Обработка сообщений
+  socket.on('chatMessage', async (msg) => {
+    const user = connectedUsers.find((u) => u.id === socket.id);
+    if (user) {
+      // Сохраняем сообщение в Firebase
+      const messageData = {
+        message: msg,
+        timestamp: new Date().toISOString(),
+      };
+
+      const messagesRef = admin.database().ref('messages');
+      const newMessageRef = messagesRef.push();
+      await newMessageRef.set(messageData);
+
+      // Отправка сообщения всем пользователям
+      io.emit('newMessage', { ...messageData, key: newMessageRef.key });
+    }
   });
 
   // Обработка отключения
@@ -69,14 +100,6 @@ io.on('connection', (socket) => {
     connectedUsers = connectedUsers.filter((u) => u.id !== socket.id);
     
     io.emit('currentUsers', connectedUsers);
-  });
-
-  // Обработка сообщений
-  socket.on('chatMessage', (msg) => {
-    const user = connectedUsers.find((u) => u.id === socket.id);
-    if (user) {
-      io.emit('newMessage', { nickname: user.nickname, avatar: user.avatar, message: msg });
-    }
   });
 });
 

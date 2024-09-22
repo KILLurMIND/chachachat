@@ -1,6 +1,5 @@
 <template>
     <main>
-        <ChatUserPanel />
         <ChatArea />
     </main>
 </template>
@@ -12,9 +11,9 @@
         flex-direction: column;
         flex-grow: 1;
         padding-bottom: @sm-size;
+        overflow: auto;
 
         .responsive(@tablet, {
-            overflow: auto;
             flex-direction: row-reverse;
         });
     }

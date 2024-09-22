@@ -60,76 +60,34 @@
         users.value = newUserList;
     };
 
-    // Обработчик успешного переподключения
-    const onReconnect = () => {
-      console.log('Соединение восстановлено. Ваш socket ID:', $socket.id);
-      $socket.emit('readyForUsers'); // Запрашиваем обновленный список пользователей
-    };
-
-    const onDisconnect = () => {
-      users.value = [];
-      console.log('Соединение потеряно, ждем переподключения...');
-    };
-
-    // Настройка событий сокета
-    const setupSocketEvents = () => {
-        $socket.on('currentUsers', onCurrentUsers);
-        $socket.on('disconnect', onDisconnect);
-        $socket.on('reconnect', onReconnect);
-    };
-
-    // Отключение событий сокета
-    const offSocketEvents = () => {
-      $socket.off('currentUsers', onCurrentUsers);
-      $socket.off('disconnect', onDisconnect);
-    };
-
     // Обработка и настройка сокета при монтировании
     onMounted(() => {
-        const handleConnection = () => {
-          console.log(`Подключение установлено. Socket ID: ${$socket.id}`);
-          setupSocketEvents();
-          $socket.emit('readyForUsers');
-        };
-
-        if ($socket.connected) {
-          handleConnection();
-        } else {
-          $socket.once('connect', handleConnection);
-        }
-
-        // Обработка переподключений
-        $socket.on('reconnect', onReconnect);
-
-        // Обработка ошибок подключения
-        $socket.on('connect_error', (error) => console.error('Ошибка подключения:', error));
-        $socket.on('reconnect_error', (error) => console.error('Ошибка переподключения:', error));
+        $socket.on('currentUsers', onCurrentUsers);
     });
 
     // Очистка обработчиков перед размонтированием
     onBeforeUnmount(() => {
-      offSocketEvents();
+        $socket.off('currentUsers', onCurrentUsers);
     });
 </script>
 
 <style scoped lang="less">
 
     .user-panel {
-        top: @sm-size;
+        top: 0;
         position: sticky;
         display: flex;
         align-items: center;
         gap: @xs-size;
-        overflow: hidden;
         border-bottom: 2px solid @cl-muted;
         background: @cl-white;
+        z-index: 1;
 
         .user-list {
             display: flex;
             align-items: start;
             gap: @xs-size;
-            padding: 0 @sm-size;
-            padding-bottom: @sm-size;
+            padding: @sm-size;
             overflow-x: auto;
 
             &__item {
@@ -161,9 +119,9 @@
                 .user-img {
                     position: absolute;
                     inset: 0;
-                    background-size: cover;
-                    background-position: @sm-size center; /* Показать левую половину */
-                    background-repeat: no-repeat;                
+                    background-size: 125%;
+                    background-position: @sm-size bottom; /* Показать левую половину */
+                    background-repeat: no-repeat;
                 }
 
                 &:hover {
@@ -171,7 +129,8 @@
                     flex: 0 0 ((@xl-size / 9) * 16);
 
                     .user-img {
-                        background-position: @md-size center; /* Показать левую половину */
+                        background-size: 100%;
+                        background-position: @md-size bottom; /* Показать левую половину */
                     }
                 }
 
@@ -208,12 +167,20 @@
 
                 &__item {
                     flex: none;
-                    width: @xl-size;
-                    aspect-ratio: 1 / 1;
+                    height: @xl-size;
+                    aspect-ratio: 16 / 9;
+
+                    .user-img {
+                        position: absolute;
+                        inset: 0;
+                        background-size: 70%;
+                        background-position: @xl-size center; /* Показать левую половину */
+                        background-repeat: no-repeat;
+                    }
 
                     &:hover {
                         flex: none;
-                        width: (@xl-size / (2/3));
+                        height: ((@xl-size / 9) * 16);
                     }
                 }
             }

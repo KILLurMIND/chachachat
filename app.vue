@@ -1,6 +1,7 @@
 <template>
   <div class="app-container">
     <Header />
+    <ChatUserPanel />
     <Main />
   </div>
   <Footer />
@@ -15,6 +16,15 @@
       }
     ]
   })
+  
+  const { $socket } = useNuxtApp();
+
+  onMounted(() => {
+
+    $socket.emit('readyForUsers');
+
+  });
+
 </script>
 
 <style scoped lang="less">
@@ -22,7 +32,10 @@
   .app-container {
     display: flex;
     flex-direction: column;
-    gap: @sm-size;
+
+    .responsive(@tablet, {
+      gap: @sm-size;
+    });
   }
 
 </style>
