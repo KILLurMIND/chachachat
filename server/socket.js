@@ -22,6 +22,14 @@ const io = new Server(server, {
   },
 });
 
+// Функция для форматирования времени в "часы:минуты"
+function formatTime(timestamp) {
+  const date = new Date(timestamp.seconds * 1000); // Firebase возвращает timestamp в секундах
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
 // Определяем набор аватаров и никнеймов
 const userPool = [
   { avatar: 'doggy.png', nickname: 'Мистер Дог' },
@@ -40,11 +48,18 @@ io.on('connection', async (socket) => {
   console.log('User connected:', socket.id);
   console.log('Connected users:', connectedUsers.length);
 
+  // Загружаем последние 10 сообщений
   const messagesRef = collection(db, 'messages');
   const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(10));
   
   const snapshot = await getDocs(q);
-  const messages = snapshot.docs.map(doc => doc.data()).reverse(); // последние 10 сообщений
+  const messages = snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      timestamp: formatTime(data.timestamp) // Форматируем время
+    };
+  }).reverse();
 
   socket.emit('initMessages', messages);
 
