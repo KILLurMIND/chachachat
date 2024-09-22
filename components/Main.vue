@@ -10,10 +10,10 @@
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        overflow: auto;
+        overflow: hidden;
 
         .responsive(@tablet, {
-            flex-direction: row-reverse;
+            
         });
     }
 </style>

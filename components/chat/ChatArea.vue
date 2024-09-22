@@ -1,9 +1,13 @@
 <template>
   <div class="chat-area">
     <div class="chat-area__streak">
-      <div v-for="(message, index) in messages" :key="index" class="chat-streak__row">
-        <div class="chat-streal__row-time">{{ message.timestamp }}</div>
-        <div class="chat-streak__row-message">{{ message.text }}</div>
+      <div class="chat-area__streak-messages">
+        <div v-for="(message, index) in messages" :key="index" class="chat-streak__row" :class="{ 'chat-streak__row--user' : message.userId === $socket.id }">
+          <div class="chat-streak__message">
+            <div class="chat-streak__message-time">{{ message.timestamp }}</div>
+            <div class="chat-streak__message-txt">{{ message.text }}</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="chat-area__form">
@@ -49,30 +53,69 @@
     flex-direction: column;
     flex: 1;
     max-height: 100%;
-    padding: 0 @sm-size;
+    overflow: hidden;
 
     .chat-area__streak {
+      position: relative;
       display: flex;
       flex-direction: column;
       justify-content: start;
-      gap: @xs-size;
       overflow-y: auto;
       flex-grow: 1;
 
-      .chat-streak__row {
+      .chat-area__streak-messages {
+        padding: 0 @sm-size;
 
-        &-time {
+        .chat-streak__row {
+          display: flex;
+          align-items: start;
+          margin-bottom: @xs-size;
 
+          .chat-streak__message {
+            display: flex;
+            align-items: center;
+            gap: @xs-size;
+
+            &-time {
+              font-size: @xs-size * (2 / 3);
+              color: lighten(@cl-black, 50%);
+            }
+
+            &-txt {
+              padding: @xs-size;
+              font-size: @xs-size;
+              box-shadow: 0 2px 8px @cl-muted;
+              border-radius: @sm-size;
+            }
+          }
         }
+      }
 
-        &-message {
-
-        }
+      &::before {
+          content: '';
+          position: sticky;
+          width: 100%;
+          min-height: @sm-size;
+          pointer-events: none;
+          z-index: 1;
+          top: -1px;
+          background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+      }
+      &::after {
+          content: '';
+          position: sticky;
+          width: 100%;
+          min-height: @sm-size;
+          pointer-events: none;
+          z-index: 1;
+          bottom: -1px;
+          background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
       }
     }
     .chat-area__form {
       display: flex;
       justify-content: center;
+      padding: 0 @sm-size;
       
 
       .chat-area__form-input {
@@ -106,6 +149,7 @@
               background 0.4s ease-in-out, 
               box-shadow 0.4s ease-in-out;
         box-shadow: 0 0 0 @cl-purp;
+        z-index: 1;
 
         &:hover {
           transform: translateY(-5px) scale(1.05) rotate(2deg);
@@ -120,9 +164,19 @@
       }
     }
 
-    .responsive(@tablet, {
-      padding: 0;
-      padding-left: @sm-size;
+    .responsive(@tablet, {//.chat-area
+      padding: @sm-size;
+
+      .chat-area__streak {
+
+        &-messages {
+          padding: 0!important;
+        }
+      }
+
+      .chat-area__form {
+        padding: 0;
+      }
     });
   }
 

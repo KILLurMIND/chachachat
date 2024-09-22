@@ -81,7 +81,7 @@
         gap: @xs-size;
         border-bottom: 2px solid @cl-muted;
         background: @cl-white;
-        z-index: 1;
+        z-index: 2;
 
         .user-list {
             display: flex;
@@ -89,6 +89,7 @@
             gap: @xs-size;
             padding: @sm-size;
             overflow-x: auto;
+            flex: 1;
 
             &__item {
             position: relative;
@@ -155,7 +156,6 @@
             border: none;
             gap: 0;
             overflow: hidden auto;
-            border-left: 2px solid @cl-muted;
             order: 1;
 
             .user-list {
@@ -164,7 +164,7 @@
                 align-items: end;
                 overflow: visible;
                 padding: 0 @sm-size;
-                flex: 1;
+                border-left: 2px solid @cl-muted;
 
                 &__item {
                     flex: none;

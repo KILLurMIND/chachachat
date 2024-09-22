@@ -2,7 +2,7 @@
   <div class="app-container">
     <Header />
     <ChatUserPanel />
-    <Main />
+    <ChatArea />
   </div>
   <Footer />
 </template>
@@ -38,18 +38,17 @@
       display: grid;
       grid-template-areas: 
         "header header"
-        "main user-panel"; 
-      grid-template-columns: 1fr auto; // Main занимает всю оставшуюся ширину, а user-list — авторазмер
+        "chat-area user-panel"; 
+      grid-template-columns: 1fr auto; // chat-area занимает всю оставшуюся ширину, а user-panel — авторазмер
       grid-template-rows: auto 1fr;
-      gap: @sm-size;
-      flex-wrap: wrap;
+      padding-bottom: 0;
 
       header {
         grid-area: header;
       }
 
-      main {
-        grid-area: main;
+      .chat-area {
+        grid-area: chat-area;
       }
 
       .user-panel {

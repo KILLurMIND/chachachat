@@ -14,6 +14,7 @@
 
         .responsive(@tablet, {
             padding-top: @sm-size;
+            margin-bottom: @sm-size;
         });
     }
 
