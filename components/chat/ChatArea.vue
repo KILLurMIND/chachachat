@@ -1,6 +1,11 @@
 <template>
   <div class="chat-area">
-    <div class="chat-area__streak">
+    <div
+      class="chat-area__streak"
+      ref="streak_messages"
+      @mousedown="startScroll"
+      :class="{ 'is-dragging': isDragging }"
+    >
       <div class="chat-area__streak-messages">
         <div v-for="(message, index) in messages" :key="index" class="chat-streak__row" :class="{ 'chat-streak__row--user' : message.userId === $socket.id }">
           <div class="chat-streak__message">
@@ -22,6 +27,50 @@
 
   const messages = ref([]);
   const inputMessage = ref('');
+  const streak_messages = ref(null);
+
+  
+  let isDragging = false;
+let startY = 0;
+let scrollTop = 0;
+
+// Начало прокрутки
+const startScroll = (event) => {
+  if (event.button !== 0) return; // только левая кнопка мыши
+  isDragging = true;
+  startY = event.clientY;
+  scrollTop = streak_messages.value.scrollTop;
+
+  streak_messages.value.classList.add('is-dragging');
+
+  window.addEventListener('mousemove', handleScroll);
+  window.addEventListener('mouseup', stopScroll);
+  document.body.style.userSelect = 'none'; // отключить выделение текста
+};
+
+// Прокрутка
+const handleScroll = (event) => {
+  if (!isDragging) return;
+  const deltaY = event.clientY - startY;
+  streak_messages.value.scrollTop = scrollTop - deltaY;
+};
+
+// Остановка прокрутки
+const stopScroll = () => {
+  isDragging = false;
+
+  streak_messages.value.classList.remove('is-dragging');
+
+  window.removeEventListener('mousemove', handleScroll);
+  window.removeEventListener('mouseup', stopScroll);
+  document.body.style.userSelect = ''; // включить выделение текста обратно
+};
+
+  const scrollToBottom = () => {
+    if (streak_messages.value) {
+      streak_messages.value.scrollTop = streak_messages.value.scrollHeight;
+    }
+  };
 
   // Отправка сообщения на сервер
   const sendMessage = () => {
@@ -37,9 +86,11 @@
   
   onMounted(() => {
 
-  $socket.on('initMessages', (initialMessages) => {
-    messages.value = initialMessages;
-  });
+    $socket.on('initMessages', async (initialMessages) => {
+      messages.value = initialMessages;
+      await nextTick();
+      scrollToBottom();
+    });
 
   });
 
@@ -62,6 +113,10 @@
       justify-content: start;
       overflow-y: auto;
       flex-grow: 1;
+      
+      &.is-dragging {
+        cursor: grabbing;
+      }
 
       .chat-area__streak-messages {
         padding: 0 @sm-size;
