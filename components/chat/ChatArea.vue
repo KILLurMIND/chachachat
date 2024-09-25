@@ -10,7 +10,11 @@
         <div v-for="(message, index) in messages" :key="index" class="chat-streak__row" :class="{ 'chat-streak__row--user' : message.userId === $socket.id }">
           <div class="chat-streak__message">
             <div class="chat-streak__message-time">{{ message.timestamp }}</div>
-            <div class="chat-streak__message-txt">{{ message.text }}</div>
+            <div class="chat-streak__message-txt"
+              :style="{
+                boxShadow: `0 2px 8px ${getUserColor(message.userId)}`,
+              }"
+            >{{ message.text }}</div>
           </div>
         </div>
       </div>
@@ -25,46 +29,54 @@
 <script setup>
   const { $socket } = useNuxtApp();
 
+  const users = inject('users', ref([]));
+
   const messages = ref([]);
   const inputMessage = ref('');
-  const streak_messages = ref(null);
 
+  // Функция для получения цвета пользователя
+  const getUserColor = (userId) => {
+      const user = users.value.find(user => user.id === userId);
+      return user ? user.color : '#ccc'; // Если пользователь не найден, возвращаем серый цвет по умолчанию
+  };
+
+  const streak_messages = ref(null);
   
   let isDragging = false;
-let startY = 0;
-let scrollTop = 0;
+  let startY = 0;
+  let scrollTop = 0;
 
-// Начало прокрутки
-const startScroll = (event) => {
-  if (event.button !== 0) return; // только левая кнопка мыши
-  isDragging = true;
-  startY = event.clientY;
-  scrollTop = streak_messages.value.scrollTop;
+  // Начало прокрутки
+  const startScroll = (event) => {
+    if (event.button !== 0) return; // только левая кнопка мыши
+    isDragging = true;
+    startY = event.clientY;
+    scrollTop = streak_messages.value.scrollTop;
 
-  streak_messages.value.classList.add('is-dragging');
+    streak_messages.value.classList.add('is-dragging');
 
-  window.addEventListener('mousemove', handleScroll);
-  window.addEventListener('mouseup', stopScroll);
-  document.body.style.userSelect = 'none'; // отключить выделение текста
-};
+    window.addEventListener('mousemove', handleScroll);
+    window.addEventListener('mouseup', stopScroll);
+    document.body.style.userSelect = 'none'; // отключить выделение текста
+  };
 
-// Прокрутка
-const handleScroll = (event) => {
-  if (!isDragging) return;
-  const deltaY = event.clientY - startY;
-  streak_messages.value.scrollTop = scrollTop - deltaY;
-};
+  // Прокрутка
+  const handleScroll = (event) => {
+    if (!isDragging) return;
+    const deltaY = event.clientY - startY;
+    streak_messages.value.scrollTop = scrollTop - deltaY;
+  };
 
-// Остановка прокрутки
-const stopScroll = () => {
-  isDragging = false;
+  // Остановка прокрутки
+  const stopScroll = () => {
+    isDragging = false;
 
-  streak_messages.value.classList.remove('is-dragging');
+    streak_messages.value.classList.remove('is-dragging');
 
-  window.removeEventListener('mousemove', handleScroll);
-  window.removeEventListener('mouseup', stopScroll);
-  document.body.style.userSelect = ''; // включить выделение текста обратно
-};
+    window.removeEventListener('mousemove', handleScroll);
+    window.removeEventListener('mouseup', stopScroll);
+    document.body.style.userSelect = ''; // включить выделение текста обратно
+  };
 
   const scrollToBottom = () => {
     if (streak_messages.value) {
@@ -125,6 +137,10 @@ const stopScroll = () => {
           display: flex;
           align-items: start;
           margin-bottom: @xs-size;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
 
           .chat-streak__message {
             display: flex;

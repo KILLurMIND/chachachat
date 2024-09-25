@@ -1,13 +1,10 @@
-// server/server.js
-
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-import { db } from '../plugins/firebase.js'; // используем Firebase инициализацию
 import { collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db } from './firebase.js'; // Импорт Firestore
 
 // Определение текущей директории
 const __filename = fileURLToPath(import.meta.url);
@@ -17,109 +14,120 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*', // Для разработки. В продакшене настрой более безопасно
+    origin: '*', // В продакшене стоит ограничить домены
     methods: ['GET', 'POST'],
   },
 });
 
-// Функция для форматирования времени в "часы:минуты"
-function formatTime(timestamp) {
-  const date = new Date(timestamp.seconds * 1000); // Firebase возвращает timestamp в секундах
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
-}
+// Функция для форматирования времени
+const formatTime = (timestamp) => {
+  const date = new Date(timestamp.seconds ? timestamp.seconds * 1000 : timestamp);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
 
-// Определяем набор аватаров и никнеймов
+// Аватары и ники пользователей
 const userPool = [
   { avatar: 'doggy.png', nickname: 'Мистер Дог' },
   { avatar: 'foxy.png', nickname: 'Мис Лис' },
   { avatar: 'frog.png', nickname: 'Мистер Фрог' },
   { avatar: 'kitty.png', nickname: 'Мис Кис' },
-  // Добавь другие, если нужно
 ];
 
-let connectedUsers = [];
+let allowedUsers = [];
+const MAX_ALLOWED_USERS = userPool.length;
 
-// Обслуживание статических файлов аватаров
-/* app.use('/avatars', express.static(path.join(__dirname, 'avatars'))); */
-
+// Основная логика работы с сокетами
 io.on('connection', async (socket) => {
-  console.log('User connected:', socket.id);
-  console.log('Connected users:', connectedUsers.length);
+  console.log('Подключен пользователь:', socket.id);
 
-  // Загружаем последние 10 сообщений
-  const messagesRef = collection(db, 'messages');
-  const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(10));
-  
-  const snapshot = await getDocs(q);
-  const messages = snapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      ...data,
-      timestamp: formatTime(data.timestamp) // Форматируем время
-    };
-  }).reverse();
-
-  socket.emit('initMessages', messages);
-
-  // Проверяем, не превышено ли количество пользователей
-  if (connectedUsers.length >= userPool.length) {
-    socket.emit('chatFull', { message: 'Чат заполнен. Попробуйте позже.' }, () => { socket.disconnect(true); });
+  // Проверяем лимит пользователей
+  if (allowedUsers.length >= MAX_ALLOWED_USERS) {
+    socket.emit('chatFull', { message: 'Чат заполнен. Попробуйте позже.' }, (ack) => {
+      if (ack === 'received') {
+        console.log(`Отключение пользователя ${socket.id} по причине переполнения`);
+        socket.disconnect(true);
+      }
+    });
     return;
   }
 
-  // Фильтруем свободных пользователей
-  const availableUsers = userPool.filter(
-    (user) => !connectedUsers.some((u) => u.nickname === user.nickname)
-  );
-  const user = availableUsers[Math.floor(Math.random() * availableUsers.length)];
+  // Назначаем свободного пользователя
+  const availableUsers = userPool.filter(user => !allowedUsers.some(u => u.nickname === user.nickname));
+  const user = { ...availableUsers[Math.floor(Math.random() * availableUsers.length)], id: socket.id };
+  allowedUsers.push(user);
+  
+  // Присоединяем пользователя к комнате
+  socket.join('chatRoom');
+  console.log(`Пользователь ${user.nickname} (${socket.id}) добавлен. Всего пользователей: ${allowedUsers.length}`);
 
-  user.id = socket.id;
+  // Получаем последние 10 сообщений из Firestore
+  const messages = await loadMessages();
 
-  connectedUsers.push(user);
-  user.value = [];
-
-  //Отправка списков пользователей
-  io.emit('currentUsers', connectedUsers);
-
-  // Ожидаем, пока клиент не сообщит, что готов принять список пользователей
-  socket.on('readyForUsers', () => {
-    console.log(`${socket.id} - полностью загрузился и готов получать инфу.`);
-    socket.emit('currentUsers', connectedUsers);
+  // Ожидаем готовности пользователя и отправляем данные
+  socket.on('userReady', (callback) => {
+    console.log(`Отправлены данные для пользователя ${socket.id}`);
     socket.emit('initMessages', messages);
-  });
-
-  // Обработка сообщений
-  socket.on('chatMessage', async (msg) => {
-    const user = connectedUsers.find((u) => u.id === socket.id);
-    if (user) {
-      // Сохраняем сообщение в Firebase
-      const messageData = {
-        message: msg,
-        timestamp: new Date().toISOString(),
-      };
-
-      const messagesRef = admin.database().ref('messages');
-      const newMessageRef = messagesRef.push();
-      await newMessageRef.set(messageData);
-
-      // Отправка сообщения всем пользователям
-      io.emit('newMessage', { ...messageData, key: newMessageRef.key });
+    io.to('chatRoom').emit('currentUsers', allowedUsers);
+    console.log(`Отправлены данные для пользователя ${socket.id}`);
+    
+    if (callback) {
+      callback('ok');  // Ответ клиенту, что запрос был принят
     }
   });
 
-  // Обработка отключения
+  // Обработка входящих сообщений
+  socket.on('chatMessage', async (msg) => {
+    const sender = allowedUsers.find(u => u.id === socket.id);
+    if (sender) {
+      const messageData = {
+        message: msg,
+        userId: sender.id,
+        nickname: sender.nickname,
+        avatar: sender.avatar,
+        timestamp: new Date(),
+      };
+      await saveMessage(messageData);
+      io.to('chatRoom').emit('newMessage', { ...messageData, timestamp: formatTime(messageData.timestamp) });
+    }
+  });
+
+  // Обработка отключения пользователя
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    connectedUsers = connectedUsers.filter((u) => u.id !== socket.id);
-    
-    io.emit('currentUsers', connectedUsers);
+    allowedUsers = allowedUsers.filter(u => u.id !== socket.id);
+    io.to('chatRoom').emit('currentUsers', allowedUsers);
+    console.log(`Пользователь ${socket.id} отключен\n-----------------\n`);
   });
 });
 
-const PORT = process.env.PORT || 3001;
+// Функция загрузки сообщений из Firestore
+const loadMessages = async () => {
+  try {
+    const messagesRef = collection(db, 'messages');
+    const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(10));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        timestamp: formatTime(data.timestamp),
+      };
+    }).reverse();
+  } catch (error) {
+    console.error('Ошибка загрузки сообщений:', error);
+    return [];
+  }
+};
 
+// Функция сохранения сообщения в Firestore
+const saveMessage = async (messageData) => {
+  try {
+    await addDoc(collection(db, 'messages'), messageData);
+  } catch (error) {
+    console.error('Ошибка сохранения сообщения:', error);
+  }
+};
+
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Socket.IO сервер запущен на порту ${PORT}`);
+  console.log(`Сервер запущен на порту ${PORT}`);
 });

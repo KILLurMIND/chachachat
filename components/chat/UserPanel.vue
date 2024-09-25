@@ -1,17 +1,18 @@
 <template>
-    <transition-group name="fade-scale" tag="div" class="user-panel">
-        <div class="user-list">
+    <div class="user-panel">
+        <transition-group name="fade-scale" tag="div" class="user-list" mode="out-in">
             <div 
                 v-for="user in users" 
-                :key="user.id" class="user-list__item" 
+                :key="user.id"
+                class="user-list__item" 
                 :class="{ 'user-list__item--user' : user.id === $socket.id }" 
                 :data-socket-id="user.id"
                 :style="{ borderColor: user.color }">
                 <div class="user-img" :style="{ backgroundImage: `url(${getAvatarUrl(user.avatar)})` }"></div>
                 <div class="user-name" :style="{ color: user.color }">{{ user.nickname }}</div>
             </div>
-        </div>
-    </transition-group>
+        </transition-group>
+    </div>
 </template>
 
 <script setup>
@@ -57,7 +58,7 @@
         //Раздаем цвет локально
         assignUserColors(newUserList);
         // Обновляем текущий список пользователей
-        users.value = newUserList;
+        users.value = [...newUserList];
     };
 
     // Обработка и настройка сокета при монтировании
@@ -69,6 +70,8 @@
     onBeforeUnmount(() => {
         $socket.off('currentUsers', onCurrentUsers);
     });
+
+    provide('users', users);
 </script>
 
 <style scoped lang="less">
@@ -223,11 +226,17 @@
         animation: fadeOutScale 0.6s ease-in forwards;
     }
 
+    /* Состояние на последней фазе анимации удаления */
+    .fade-scale-leave-to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
     /* Ключевые кадры для появления */
     @keyframes fadeInScale {
         0% {
             opacity: 0;
-            transform: scale(0.9);
+            transform: scale(0.75);
         }
         100% {
             opacity: 1;
