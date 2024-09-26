@@ -3,7 +3,7 @@
         <transition-group name="fade-scale" tag="div" class="user-list" mode="out-in">
             <div 
                 v-for="user in users" 
-                :key="user.id"
+                :key="user.id" 
                 class="user-list__item" 
                 :class="{ 'user-list__item--user' : user.id === $socket.id }" 
                 :data-socket-id="user.id"
@@ -18,60 +18,14 @@
 <script setup>
     const { $socket } = useNuxtApp();
 
-    const users = ref([]);
+    const props = defineProps({
+        users: {
+            type: Array,
+            required: true
+        }
+    });
 
-    const colorSet = ['#28E5FF', '#46FF28', '#FF2828', '#FFD028'];
-
-    // Функция для получения URL аватара
     const getAvatarUrl = (avatar) => `_nuxt/assets/imgs/avatars/${avatar}`;
-
-    const assignUserColors = (currentUsers) => {
-        currentUsers.forEach((user, index) => {
-            if (!user.color) {
-                // Назначаем цвет пользователю, используя индекс
-                user.color = colorSet[index % colorSet.length];
-            }
-        });
-    };
-
-    const onCurrentUsers = (newUserList) => {
-        // Сравнение старого и нового списка пользователей
-        const oldUserIds = users.value.map((user) => user.id);
-        const newUserIds = newUserList.map((user) => user.id);
-
-        // Вычисляем, кто вошел (есть в новом, но нет в старом списке)
-        const usersJoined = newUserList.filter((user) => !oldUserIds.includes(user.id));
-      
-        // Вычисляем, кто вышел (был в старом, но отсутствует в новом списке)
-        const usersLeft = users.value.filter((user) => !newUserIds.includes(user.id));
-
-        // Логируем пользователей, которые вошли
-        usersJoined.forEach((user) => {
-          console.log(`${$socket.id === user.id ? '(Это Вы)' : ''}Пользователь вошел: ${user.nickname} (ID: ${user.id})`);
-        });
-    
-        // Логируем пользователей, которые вышли
-        usersLeft.forEach((user) => {
-          console.log(`Пользователь вышел: ${user.nickname} (ID: ${user.id})`);
-        });
-    
-        //Раздаем цвет локально
-        assignUserColors(newUserList);
-        // Обновляем текущий список пользователей
-        users.value = [...newUserList];
-    };
-
-    // Обработка и настройка сокета при монтировании
-    onMounted(() => {
-        $socket.on('currentUsers', onCurrentUsers);
-    });
-
-    // Очистка обработчиков перед размонтированием
-    onBeforeUnmount(() => {
-        $socket.off('currentUsers', onCurrentUsers);
-    });
-
-    provide('users', users);
 </script>
 
 <style scoped lang="less">

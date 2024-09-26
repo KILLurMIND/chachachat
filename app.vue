@@ -1,8 +1,8 @@
 <template>
   <div class="app-container">
     <Header />
-    <ChatUserPanel />
-    <ChatArea />
+    <ChatUserPanel v-if="users.length > 0" :users="users" />
+    <ChatArea :messages="messages" />
   </div>
   <Footer />
 </template>
@@ -18,29 +18,81 @@
   })
   
   const { $socket } = useNuxtApp();
+  
+  const users = ref([]);
+  const messages = ref([]);
+
+  // Набор возможных цветов для пользователей
+  const colorSet = ['#28E5FF', '#46FF28', '#FF2828'];
+  
+  const assignColorsToUsers = (newUserList) => {
+    let availableColors = [...colorSet]; // Копируем доступные цвета
+  
+    // Создаем новый массив с назначенными цветами
+    return newUserList.map((user) => {
+      // Если это текущий пользователь, не назначаем цвет
+      if (user.id === $socket.id) {
+        return { ...user, color: null };
+      }
+    
+      // Случайно выбираем цвет из доступных и удаляем его из списка
+      const randomIndex = Math.floor(Math.random() * availableColors.length);
+      const assignedColor = availableColors.splice(randomIndex, 1)[0];
+    
+      return { ...user, color: assignedColor };
+    });
+  };
+  
+  const onCurrentUsers = (newUserList) => {
+    // Сравнение старого и нового списка пользователей
+    const oldUserIds = users.value.map((user) => user.id);
+    const newUserIds = newUserList.map((user) => user.id);
+  
+    // Вычисляем, кто вошел (есть в новом, но нет в старом списке)
+    const usersJoined = newUserList.filter((user) => !oldUserIds.includes(user.id));
+  
+    // Вычисляем, кто вышел (был в старом, но отсутствует в новом списке)
+    const usersLeft = users.value.filter((user) => !newUserIds.includes(user.id));
+  
+    // Логируем пользователей, которые вошли
+    usersJoined.forEach((user) => {
+      console.log(`${$socket.id === user.id ? '(Это Вы)' : ''} Пользователь вошел: ${user.nickname} (ID: ${user.id})`);
+    });
+  
+    // Логируем пользователей, которые вышли
+    usersLeft.forEach((user) => {
+      console.log(`Пользователь вышел: ${user.nickname} (ID: ${user.id})`);
+    });
+  
+    // Присваиваем случайные цвета остальным пользователям и обновляем список
+    users.value = assignColorsToUsers(newUserList);
+  };
 
 onMounted(() => {
-  $socket.connect();
+  if ($socket && !$socket.connected) {
+    $socket.connect();
+    console.log('Socket is not initialized. Connecting...');
+  }
+
   if ($socket) {
     console.log('Initializing socket events...');
 
-    $socket.on('connect', () => {
-      console.log('Socket connected, ID:', $socket.id);
-
-      // Отправляем сигнал о готовности пользователя
-      $socket.emit('userReady', (response) => {
-        if (response === 'ok') {
-          console.log('Сервер подтвердил событие userReady');
-        } else {
-          console.log('Произошла ошибка с событием userReady');
-        }
-      });
+    $socket.emit('userReady', (response) => {
+      if (response === 'ok') {
+        console.log('Сервер подтвердил событие userReady');
+      } else {
+        console.log('Произошла ошибка с событием userReady');
+      }
     });
+
+    // Получение данных пользователей
+    $socket.on('currentUsers', onCurrentUsers);
 
     // Обработчик отключения
     $socket.on('disconnect', () => {
       console.log('Socket disconnected, ID:', $socket.id);
-      location.reload(); // Обновление страницы при отключении
+      
+      setTimeout(() => $socket.connect(), 1500);
     });
 
     // Обработка ошибок переподключения
@@ -48,14 +100,16 @@ onMounted(() => {
       console.error('Ошибка подключения:', error);
     });
   } else {
-    console.error('Socket is not initialized.');
+    $socket.connect();
+    console.error('Socket is not initialized. Try to connect...');
   }
 });
 
 onBeforeUnmount(() => {
-  $socket.off('connect');
-  $socket.off('disconnect');
-  $socket.off('connect_error');
+  if ($socket) {
+    $socket.disconnect();
+    console.log('Socket disconnected before unmount.');
+  }
 });
 
 </script>
