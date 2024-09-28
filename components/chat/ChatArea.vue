@@ -182,7 +182,7 @@
             max-width: 90%;
 
             .responsive(@tablet, {
-              max-width: 75%;
+              max-width: 45%;
             });
 
             &-time {
