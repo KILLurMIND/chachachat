@@ -2,7 +2,7 @@
   <div class="app-container">
     <Header />
     <ChatUserPanel v-if="users.length > 0" :users="users" />
-    <ChatArea :messages="messages" />
+    <ChatArea :messages="processedMessages" @send-message="handleSendMessage" />
   </div>
   <Footer />
 </template>
@@ -22,6 +22,12 @@
   const users = ref([]);
   const messages = ref([]);
 
+  const handleNewMessage = (newMsg) => {
+    messages.value.push(newMsg);
+  };
+  const handleSendMessage = (message) => {
+    $socket.emit('chatMessage', message);
+  };
   // Набор возможных цветов для пользователей
   const colorSet = ['#28E5FF', '#46FF28', '#FF2828'];
   
@@ -68,6 +74,20 @@
     users.value = assignColorsToUsers(newUserList);
   };
 
+  // Функция для добавления цвета в каждое сообщение
+  const processMessages = () => {
+    return messages.value.map((message) => {
+      const user = users.value.find(user => user.id === message.userId);
+      return {
+        ...message,
+        color: user ? user.color : '#eee' // если пользователя нет, назначаем серый цвет
+      };
+    });
+  };
+
+  // Обработанные сообщения с цветом
+  const processedMessages = computed(() => processMessages());
+
 onMounted(() => {
   if ($socket && !$socket.connected) {
     $socket.connect();
@@ -87,6 +107,13 @@ onMounted(() => {
 
     // Получение данных пользователей
     $socket.on('currentUsers', onCurrentUsers);
+
+    $socket.on('initMessages', (initialMessages) => {
+      messages.value = initialMessages;
+      console.log('Получение списка из 10 последних сообщений!');
+    });
+
+    $socket.on('newMessage', handleNewMessage);
 
     // Обработчик отключения
     $socket.on('disconnect', () => {

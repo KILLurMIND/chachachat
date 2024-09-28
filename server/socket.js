@@ -87,7 +87,7 @@ io.on('connection', async (socket) => {
     // Загружаем последние сообщения
     const messages = await loadMessages();
     
-    // Отправляем инициализацию данных пользователю
+    // Отправляем актуальные данные пользователеям
     socket.emit('initMessages', messages);
     io.to('chatRoom').emit('currentUsers', allowedUsers);
 
@@ -96,14 +96,12 @@ io.on('connection', async (socket) => {
   });
 
   // Обработка отправки нового сообщения
-  socket.on('chatMessage', async (msg) => {
+  socket.on('chatMessage', async (message) => {
     const sender = allowedUsers.find(u => u.id === socket.id);
     if (sender) {
       const messageData = {
-        message: msg,
+        text: message.text,
         userId: sender.id,
-        nickname: sender.nickname,
-        avatar: sender.avatar,
         timestamp: new Date(),
       };
       await saveMessage(messageData);

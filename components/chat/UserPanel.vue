@@ -16,7 +16,6 @@
 </template>
 
 <script setup>
-    const { $socket } = useNuxtApp();
 
     const props = defineProps({
         users: {
@@ -141,10 +140,10 @@
                         height: ((@xl-size / 9) * 16);
                     }
                 }
-            }
 
-            &:hover {
-                border-left: 4px solid @cl-purp;
+                &:hover {
+                    border-left: 4px solid @cl-purp;
+                }
             }
 
             &::before {

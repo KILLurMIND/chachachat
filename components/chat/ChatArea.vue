@@ -6,39 +6,40 @@
       @mousedown="startScroll"
       :class="{ 'is-dragging': isDragging }"
     >
-      <div class="chat-area__streak-messages">
-        <div v-for="(message, index) in messages" :key="index" class="chat-streak__row" :class="{ 'chat-streak__row--user' : message.userId === $socket.id }">
+      <transition-group name="fade" tag="div" class="chat-area__streak-messages">
+        <div v-for="(message, index) in messages" :key="index" class="chat-streak__row" :class="{ 'chat-streak__row--user' : message.userId === $socket.id }" :data-socket-id="message.userId">
           <div class="chat-streak__message">
             <div class="chat-streak__message-time">{{ message.timestamp }}</div>
             <div class="chat-streak__message-txt"
               :style="{
-                boxShadow: `0 2px 8px ${getUserColor(message.userId)}`,
+                boxShadow: `0 2px 8px ${message.color}`,
               }"
             >{{ message.text }}</div>
           </div>
         </div>
-      </div>
+      </transition-group>
     </div>
     <div class="chat-area__form">
       <input class="chat-area__form-input" v-model="inputMessage" @keyup.enter="sendMessage" placeholder="Ваше сообщение" />
-      <button class="chat-area__form-btn"><i class="bi bi-arrow-up-circle"></i></button>
+      <button class="chat-area__form-btn" @click="sendMessage"><i class="bi bi-arrow-up-circle"></i></button>
     </div>
   </div>
 </template>
 
 <script setup>
+
   const { $socket } = useNuxtApp();
 
-  const users = inject('users', ref([]));
+  const emit = defineEmits(['send-message']);
 
-  const messages = ref([]);
+  const props = defineProps({
+    messages: {
+      type: Array,
+      required: true
+    }
+  });
+  
   const inputMessage = ref('');
-
-  // Функция для получения цвета пользователя
-  const getUserColor = (userId) => {
-      const user = users.value.find(user => user.id === userId);
-      return user ? user.color : '#ccc'; // Если пользователь не найден, возвращаем серый цвет по умолчанию
-  };
 
   const streak_messages = ref(null);
   
@@ -80,29 +81,37 @@
 
   const scrollToBottom = () => {
     if (streak_messages.value) {
-      streak_messages.value.scrollTop = streak_messages.value.scrollHeight;
+      streak_messages.value.scroll({
+        top: streak_messages.value.scrollHeight,
+        behavior: 'smooth', // Добавляем плавную анимацию прокрутки
+      });
     }
   };
 
-  // Отправка сообщения на сервер
   const sendMessage = () => {
-      if (inputMessage.value.trim() !== '') {
-          const message = {
-              message: inputMessage.value,
-              timestamp: new Date().toISOString(),
-          };
-          $socket.emit('chatMessage', message);
-          inputMessage.value = '';
-      }
+    if (inputMessage.value.trim() !== '') {
+      const message = {
+        text: inputMessage.value,
+      };
+      emit('send-message', message); // Отправляем только текст
+      inputMessage.value = '';
+    }
   };
   
   onMounted(() => {
 
-    $socket.on('initMessages', async (initialMessages) => {
-      messages.value = initialMessages;
-      await nextTick();
-      scrollToBottom();
+    $socket.on('newMessage', (newMsg) => {
+      
+      props.messages.push(newMsg);
+      nextTick(scrollToBottom);
     });
+    
+    watch(
+      () => props.messages,
+      () => {
+        nextTick(scrollToBottom); // Прокрутка вниз
+      }
+    );
 
   });
 
@@ -123,6 +132,7 @@
       display: flex;
       flex-direction: column;
       justify-content: start;
+      overflow-x: hidden;
       overflow-y: auto;
       flex-grow: 1;
       
@@ -138,6 +148,22 @@
           align-items: start;
           margin-bottom: @xs-size;
 
+          &--user {
+            justify-content: end;
+
+            .chat-streak__message {
+
+              &-txt {
+                color: @cl-white;
+                background: @cl-gradient;
+              }
+            }
+
+            &.fade-enter-from, .fade-leave-to {
+              transform: translateX(100px);
+            }
+          }
+
           &:last-child {
             margin-bottom: 0;
           }
@@ -146,6 +172,11 @@
             display: flex;
             align-items: center;
             gap: @xs-size;
+            max-width: 90%;
+
+            .responsive(@tablet, {
+              max-width: 75%;
+            });
 
             &-time {
               font-size: @xs-size * (2 / 3);
@@ -157,6 +188,9 @@
               font-size: @xs-size;
               box-shadow: 0 2px 8px @cl-muted;
               border-radius: @sm-size;
+              line-height: @sm-size;
+              word-break: break-word;
+              overflow-wrap: anywhere;
             }
           }
         }
@@ -235,10 +269,18 @@
       }
     }
 
+    .fade-enter-active, .fade-leave-active {
+      transition: 0.35s ease-out;
+    }
+    .fade-enter-from, .fade-leave-to {
+      opacity: 0;
+      transform: translateX(-100px);
+    }
+
     .responsive(@tablet, {//.chat-area
-      padding: @sm-size;
 
       .chat-area__streak {
+        padding: 0 @sm-size;
 
         &-messages {
           padding: 0!important;
@@ -246,7 +288,8 @@
       }
 
       .chat-area__form {
-        padding: 0;
+        padding: @sm-size;
+        padding-top: 0;
       }
     });
   }
