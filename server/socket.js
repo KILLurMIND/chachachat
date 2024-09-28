@@ -9,7 +9,7 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: '*', // В продакшене обязательно ограничьте домены
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST']
   },
 });
 

@@ -20,7 +20,14 @@
       </transition-group>
     </div>
     <div class="chat-area__form">
-      <input class="chat-area__form-input" v-model="inputMessage" @keyup.enter="sendMessage" placeholder="Ваше сообщение" />
+      <input
+        class="chat-area__form-input"
+        v-model="inputMessage"
+        id="messageInput"
+        name="message"
+        @keyup.enter="sendMessage"
+        placeholder="Ваше сообщение"
+      />
       <button class="chat-area__form-btn" @click="sendMessage"><i class="bi bi-arrow-up-circle"></i></button>
     </div>
   </div>
