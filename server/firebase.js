@@ -1,15 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCdUjFkYbsx7Pt9x70TWboeIdj6uvhm1-Y",
-  authDomain: "chachachat-a163c.firebaseapp.com",
-  databaseURL: "https://chachachat-a163c-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "chachachat-a163c",
-  storageBucket: "chachachat-a163c.appspot.com",
-  messagingSenderId: "277750700770",
-  appId: "1:277750700770:web:974ffbb4c438b078675cbb",
-  measurementId: "G-GWL021BGWR"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.FIREBASE_DATABASE_URL,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
