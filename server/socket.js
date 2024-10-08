@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from './firebase'; // Firestore instance
+import { db } from './firebase.js'; // Firestore instance
 
 const app = express();
 const server = createServer(app);
